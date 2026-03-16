@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -628,10 +629,44 @@ footer{background:var(--wd);padding:24px 16px 14px}
 .drive-status.show-success{background:rgba(74,124,63,.1);color:var(--leaf);display:block}
 .drive-status.show-error{background:rgba(192,57,43,.1);color:var(--red);display:block}
 .drive-status.show-info{background:rgba(196,132,58,.1);color:var(--wm);display:block}
+
+/* ===== GOOGLE DRIVE AUTO-SAVE ===== */
+.gdrive-banner{position:fixed;bottom:80px;left:16px;background:#fff;border:1.5px solid #4285F4;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;z-index:998;box-shadow:0 4px 16px rgba(0,0,0,.12);font-family:'Nunito',sans-serif;font-size:11px;color:#333;max-width:280px;transform:translateX(-120%);transition:transform .4s ease}
+.gdrive-banner.show{transform:translateX(0)}
+.gdrive-banner img{width:20px;height:20px;flex-shrink:0}
+.gdrive-banner-text strong{display:block;font-size:12px;color:#1a73e8;margin-bottom:1px}
+.gdrive-banner-text span{font-size:10px;color:#666}
+.gdrive-banner-close{margin-left:auto;background:none;border:none;cursor:pointer;color:#999;font-size:14px;padding:0 0 0 8px;line-height:1}
+.gdrive-connect-bar{background:linear-gradient(135deg,#1a73e8,#4285F4);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.gdrive-connect-bar p{font-size:11px;color:rgba(255,255,255,.9);margin:0;display:flex;align-items:center;gap:6px}
+.gdrive-connect-bar p img{width:16px;height:16px;filter:brightness(0) invert(1)}
+.gdrive-connect-btn{padding:6px 14px;background:#fff;color:#1a73e8;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap}
+.gdrive-connect-btn:hover{background:#f0f4ff}
+.gdrive-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
+.gdrive-connected .gdrive-status-dot{background:#0f9d58}
+.gdrive-disconnected .gdrive-status-dot{background:#ea4335}
 </style>
 </head>
 <body>
 <!-- NAV -->
+
+<!-- GOOGLE DRIVE CONNECT BAR -->
+<div id="gdrive-connect-bar" class="gdrive-connect-bar" style="display:none">
+  <p><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt=""/>
+    Connect Google Drive to auto-save orders, customers and wishlist data
+  </p>
+  <button class="gdrive-connect-btn" onclick="connectGDrive()">Connect Drive</button>
+</div>
+<!-- GOOGLE DRIVE SAVE NOTIFICATION -->
+<div class="gdrive-banner" id="gdrive-banner">
+  <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt="Drive"/>
+  <div class="gdrive-banner-text">
+    <strong id="gdrive-banner-title">Saved to Google Drive</strong>
+    <span id="gdrive-banner-msg">Data saved successfully</span>
+  </div>
+  <button class="gdrive-banner-close" onclick="hideGDriveBanner()">x</button>
+</div>
+
 <nav>
   <div class="logo" onclick="showSec('home')">
     <div class="logo-name">AMBARTERY</div>
@@ -1309,14 +1344,14 @@ function validate1(){var ok=true;var fields=[['fn','First name'],['ln','Last nam
 function validate2(){var ok=true;if(payType==='upi'){var v=document.getElementById('upi-id').value.trim();var fg=document.getElementById('fg-upi'),em=document.getElementById('em-upi');if(!v||!v.includes('@')){fg.classList.add('err');em.textContent='Valid UPI ID required';ok=false;}else{fg.classList.remove('err');em.textContent='';}}if(payType==='card'){var n=document.getElementById('cnum').value.replace(/\s/g,'');var fg=document.getElementById('fg-cnum'),em=document.getElementById('em-cnum');if(n.length<16){fg.classList.add('err');em.textContent='Valid card required';ok=false;}else{fg.classList.remove('err');em.textContent='';}}return ok;}
 function goStep(n){if(n===2&&!validate1()){showToast('Fill all required fields');return;}if(n===3&&!validate2()){showToast('Fill payment details');return;}if(n===3)buildReview();for(var i=1;i<=3;i++)document.getElementById('co-step-'+i).style.display=i===n?'block':'none';for(var i=1;i<=3;i++){var s=document.getElementById('step-'+i);s.classList.remove('active','done');if(i<n)s.classList.add('done');else if(i===n)s.classList.add('active');}document.getElementById('line-1').classList.toggle('done',n>1);document.getElementById('line-2').classList.toggle('done',n>2);window.scrollTo({top:0,behavior:'smooth'});}
 function buildReview(){var fn=document.getElementById('fn').value,ln=document.getElementById('ln').value,cem=document.getElementById('cem').value,ph=document.getElementById('ph').value,ad=document.getElementById('ad').value,ci=document.getElementById('ci').value,pi=document.getElementById('pi').value,st=document.getElementById('st').value;document.getElementById('rev-del').innerHTML='<div style="font-size:9px;font-weight:700;color:var(--wm);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px">Delivery</div><p style="font-size:11px;line-height:1.8;color:var(--td)">'+fn+' '+ln+'<br>'+ad+'<br>'+ci+', '+st+' - '+pi+'<br>'+ph+'</p>';var pl={upi:'UPI - '+document.getElementById('upi-id').value,card:'Card ending '+document.getElementById('cnum').value.slice(-4),cod:'Cash on Delivery'};document.getElementById('rev-pay').innerHTML='<div style="font-size:9px;font-weight:700;color:var(--wm);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px">Payment</div><p style="font-size:11px;color:var(--td)">'+(pl[payType]||'UPI')+'</p>';var h='<div style="font-size:9px;font-weight:700;color:var(--wm);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px">Items</div>';for(var i=0;i<cart.length;i++){var item=cart[i];h+='<div style="display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:1px solid rgba(196,132,58,.08)"><img src="'+item.img+'" style="width:30px;height:30px;border-radius:4px;object-fit:cover;flex-shrink:0" loading="lazy"/><div style="flex:1"><div style="font-size:11px;font-weight:600;color:var(--wd)">'+item.name+'</div><div style="font-size:9px;color:var(--ts)">Qty: '+item.qty+'</div></div><div style="font-size:10px;font-weight:600;color:var(--wm)">'+fmt(item.price*item.qty)+'</div></div>';}document.getElementById('rev-items').innerHTML=h;}
-function placeOrder(){var sub=cartSub(),ship=shipCost(),disc=promoOn?Math.round(sub*.15):0;var pl={upi:'UPI - '+document.getElementById('upi-id').value,card:'Card ending '+document.getElementById('cnum').value.slice(-4),cod:'Cash on Delivery'};var o={id:'AMB-'+Math.floor(100000+Math.random()*900000),customer:{name:document.getElementById('fn').value+' '+document.getElementById('ln').value,email:document.getElementById('cem').value,phone:document.getElementById('ph').value},address:document.getElementById('ad').value,city:document.getElementById('ci').value,state:document.getElementById('st').value,pin:document.getElementById('pi').value,delivery:delType,payment:pl[payType]||'UPI',items:cart.map(function(i){return Object.assign({},i);}),subtotal:sub,shipping:ship,discount:disc,total:sub+ship-disc,status:'Pending',date:new Date().toISOString().split('T')[0],notes:''};orders.unshift(o);document.getElementById('oid').textContent='#'+o.id;var sh='';for(var i=0;i<TS.length;i++)sh+='<div class="track-step'+(i===0?' active-step':'')+'"><img class="track-step-icon" src="'+TI[i]+'" alt="" loading="lazy"/><div class="track-lbl">'+TS[i]+'</div></div>';document.getElementById('success-track-steps').innerHTML=sh;cart=[];updateBadge();promoOn=false;showSec('success');showToast('Order placed! ID: '+o.id);}
+function placeOrder(){var sub=cartSub(),ship=shipCost(),disc=promoOn?Math.round(sub*.15):0;var pl={upi:'UPI - '+document.getElementById('upi-id').value,card:'Card ending '+document.getElementById('cnum').value.slice(-4),cod:'Cash on Delivery'};var o={id:'AMB-'+Math.floor(100000+Math.random()*900000),customer:{name:document.getElementById('fn').value+' '+document.getElementById('ln').value,email:document.getElementById('cem').value,phone:document.getElementById('ph').value},address:document.getElementById('ad').value,city:document.getElementById('ci').value,state:document.getElementById('st').value,pin:document.getElementById('pi').value,delivery:delType,payment:pl[payType]||'UPI',items:cart.map(function(i){return Object.assign({},i);}),subtotal:sub,shipping:ship,discount:disc,total:sub+ship-disc,status:'Pending',date:new Date().toISOString().split('T')[0],notes:''};orders.unshift(o);document.getElementById('oid').textContent='#'+o.id;gdSaveOrder(o);var sh='';for(var i=0;i<TS.length;i++)sh+='<div class="track-step'+(i===0?' active-step':'')+'"><img class="track-step-icon" src="'+TI[i]+'" alt="" loading="lazy"/><div class="track-lbl">'+TS[i]+'</div></div>';document.getElementById('success-track-steps').innerHTML=sh;cart=[];updateBadge();promoOn=false;showSec('success');showToast('Order placed! ID: '+o.id);}
 function copyOrderId(){var id=document.getElementById('oid').textContent.replace('#','');document.getElementById('track-input').value=id;showToast('Order ID copied!');}
 function trackOrder(){var input=document.getElementById('track-input').value.trim().toUpperCase().replace('#','');var o=null;for(var i=0;i<orders.length;i++){if(orders[i].id===input||orders[i].id==='AMB-'+input||orders[i].id.indexOf(input)>=0){o=orders[i];break;}}var res=document.getElementById('track-result');if(!o){res.classList.remove('show');showToast('Order not found');return;}res.classList.add('show');document.getElementById('tr-id').textContent='#'+o.id;document.getElementById('tr-date').textContent='Ordered on '+o.date;var sc={Pending:'s-pending',Confirmed:'s-confirmed',Packed:'s-packed',Shipped:'s-shipped',Delivered:'s-delivered',Cancelled:'s-cancelled'};document.getElementById('tr-status-badge').innerHTML='<span style="padding:3px 10px;border-radius:16px;font-size:10px;font-weight:700" class="'+(sc[o.status]||'s-pending')+'">'+o.status+'</span>';document.getElementById('tr-customer').innerHTML=o.customer.name+'<br>'+o.customer.phone;document.getElementById('tr-address').innerHTML=o.address+'<br>'+o.city+', '+o.state+' '+o.pin;document.getElementById('tr-payment').textContent=o.payment;document.getElementById('tr-delivery').textContent=o.delivery==='express'?'Express (2-3 days)':'Standard (5-7 days)';var ci=o.status==='Cancelled'?-1:TS.indexOf(o.status);var prog='';for(var i=0;i<TS.length;i++){var cls=i<ci?'done':i===ci?'current':'';prog+='<div class="tp-step"><div class="tp-circle '+cls+'"><img src="'+TI[i]+'" alt=""/></div><div class="tp-label '+cls+'">'+TS[i]+'</div></div>';if(i<TS.length-1)prog+='<div class="tp-line '+(i<ci?'done':'')+'"></div>';}document.getElementById('tr-progress').innerHTML=prog;var h='<div style="font-size:9px;font-weight:700;color:var(--wm);letter-spacing:1px;text-transform:uppercase;margin-bottom:5px">Items</div>';for(var i=0;i<o.items.length;i++){var item=o.items[i];h+='<div class="track-item-row"><img class="track-item-img" src="'+item.img+'" alt="" loading="lazy"/><div style="flex:1"><div style="font-size:11px;font-weight:600;color:var(--wd)">'+item.name+'</div><div style="font-size:9px;color:var(--ts)">Qty: '+item.qty+'</div></div><div style="font-size:11px;font-weight:600;color:var(--wm)">'+fmt(item.price*item.qty)+'</div></div>';}document.getElementById('tr-items').innerHTML=h;document.getElementById('tr-total').textContent=fmt(o.total);}
 function seedDemoOrders(){if(orders.length>0)return;orders=[{id:'AMB-100001',customer:{name:'Priya Sharma',email:'priya@example.com',phone:'+91 98001 11111'},address:'14, Gandhi Nagar, Coimbatore',city:'Coimbatore',state:'Tamil Nadu',pin:'641002',delivery:'standard',payment:'UPI',items:[Object.assign({},products[0],{qty:1}),Object.assign({},products[6],{qty:2})],subtotal:3347,shipping:0,discount:0,total:3347,status:'Shipped',date:'2026-03-10',notes:''},{id:'AMB-100002',customer:{name:'Ravi Kumar',email:'ravi@example.com',phone:'+91 98001 22222'},address:'22, Anna Salai, Chennai',city:'Chennai',state:'Tamil Nadu',pin:'600002',delivery:'express',payment:'Cash on Delivery',items:[Object.assign({},products[2],{qty:1})],subtotal:699,shipping:99,discount:0,total:798,status:'Pending',date:'2026-03-13',notes:''},{id:'AMB-100003',customer:{name:'Meena Iyer',email:'meena@example.com',phone:'+91 98001 33333'},address:'8, MG Road, Bangalore',city:'Bangalore',state:'Karnataka',pin:'560001',delivery:'standard',payment:'Card ending 4321',items:[Object.assign({},products[4],{qty:1}),Object.assign({},products[1],{qty:1})],subtotal:2248,shipping:0,discount:337,total:1911,status:'Delivered',date:'2026-03-05',notes:'Regular customer.'}];}
 function handleUserClick(){if(currentUser)showSec('account');else showSec('customer-auth');}
 function switchAuthTab(tab){document.getElementById('tab-login').classList.toggle('active',tab==='login');document.getElementById('tab-signup').classList.toggle('active',tab==='signup');document.getElementById('auth-login-form').classList.toggle('active',tab==='login');document.getElementById('auth-signup-form').classList.toggle('active',tab==='signup');}
 function doCustomerLogin(){var email=document.getElementById('login-email').value.trim().toLowerCase();var pw=document.getElementById('login-pw').value;var errEl=document.getElementById('auth-login-err');if(!email||!pw){document.getElementById('auth-login-err-msg').textContent='Enter email and password.';errEl.classList.add('show');return;}var user=null;for(var i=0;i<registeredUsers.length;i++){if(registeredUsers[i].email.toLowerCase()===email&&registeredUsers[i].password===pw){user=registeredUsers[i];break;}}if(user){currentUser=user;errEl.classList.remove('show');document.getElementById('login-email').value='';document.getElementById('login-pw').value='';updateUserNav();populateAccount();showSec('account');showToast('Welcome, '+user.name.split(' ')[0]+'!');}else{document.getElementById('auth-login-err-msg').textContent='Wrong email/password. Try priya@example.com / demo123';errEl.classList.add('show');}}
-function doSignup(){var name=document.getElementById('su-name').value.trim();var email=document.getElementById('su-email').value.trim().toLowerCase();var phone=document.getElementById('su-phone').value.trim();var pw=document.getElementById('su-pw').value;var pw2=document.getElementById('su-pw2').value;var ok=true;if(!name){document.getElementById('su-name-err').textContent='Name required';ok=false;}else document.getElementById('su-name-err').textContent='';if(!email||!/\S+@\S+\.\S+/.test(email)){document.getElementById('su-email-err').textContent='Valid email required';ok=false;}else document.getElementById('su-email-err').textContent='';if(!phone){document.getElementById('su-phone-err').textContent='Phone required';ok=false;}else document.getElementById('su-phone-err').textContent='';if(!pw||pw.length<6){document.getElementById('su-pw-err').textContent='Min 6 characters';ok=false;}else document.getElementById('su-pw-err').textContent='';if(pw!==pw2){document.getElementById('su-pw2-err').textContent='Passwords do not match';ok=false;}else document.getElementById('su-pw2-err').textContent='';if(!ok)return;for(var i=0;i<registeredUsers.length;i++){if(registeredUsers[i].email===email){document.getElementById('su-email-err').textContent='Email already registered';return;}}var u={name:name,email:email,phone:phone,password:pw,joined:new Date().toISOString().split('T')[0]};registeredUsers.push(u);currentUser=u;['su-name','su-email','su-phone','su-pw','su-pw2'].forEach(function(id){document.getElementById(id).value='';});updateUserNav();populateAccount();showSec('account');showToast('Welcome, '+name.split(' ')[0]+'!');}
+function doSignup(){var name=document.getElementById('su-name').value.trim();var email=document.getElementById('su-email').value.trim().toLowerCase();var phone=document.getElementById('su-phone').value.trim();var pw=document.getElementById('su-pw').value;var pw2=document.getElementById('su-pw2').value;var ok=true;if(!name){document.getElementById('su-name-err').textContent='Name required';ok=false;}else document.getElementById('su-name-err').textContent='';if(!email||!/\S+@\S+\.\S+/.test(email)){document.getElementById('su-email-err').textContent='Valid email required';ok=false;}else document.getElementById('su-email-err').textContent='';if(!phone){document.getElementById('su-phone-err').textContent='Phone required';ok=false;}else document.getElementById('su-phone-err').textContent='';if(!pw||pw.length<6){document.getElementById('su-pw-err').textContent='Min 6 characters';ok=false;}else document.getElementById('su-pw-err').textContent='';if(pw!==pw2){document.getElementById('su-pw2-err').textContent='Passwords do not match';ok=false;}else document.getElementById('su-pw2-err').textContent='';if(!ok)return;for(var i=0;i<registeredUsers.length;i++){if(registeredUsers[i].email===email){document.getElementById('su-email-err').textContent='Email already registered';return;}}var u={name:name,email:email,phone:phone,password:pw,joined:new Date().toISOString().split('T')[0]};registeredUsers.push(u);currentUser=u;gdSaveCustomer(u);['su-name','su-email','su-phone','su-pw','su-pw2'].forEach(function(id){document.getElementById(id).value='';});updateUserNav();populateAccount();showSec('account');showToast('Welcome, '+name.split(' ')[0]+'!');}
 function customerLogout(){currentUser=null;updateUserNav();showToast('Logged out.');showSec('home');}
 function updateUserNav(){var label=document.getElementById('user-nav-label');label.textContent=currentUser?currentUser.name.split(' ')[0]:'Login';}
 function toggleEye(inputId,btn){var i=document.getElementById(inputId);if(i.type==='password'){i.type='text';btn.textContent='hide';}else{i.type='password';btn.textContent='show';}}
@@ -1325,7 +1360,7 @@ function showAccTab(tab){['orders','wishlist','addresses','profile'].forEach(fun
 function populateAccount(){if(!currentUser)return;document.getElementById('acc-avatar').textContent=currentUser.name.split(' ').map(function(n){return n[0];}).join('').substring(0,2).toUpperCase();document.getElementById('acc-name').textContent=currentUser.name;document.getElementById('acc-email').textContent=currentUser.email;renderMyOrders();}
 function renderMyOrders(){var myOrders=orders.filter(function(o){return currentUser&&o.customer.email.toLowerCase()===currentUser.email.toLowerCase();});var container=document.getElementById('my-orders-list');if(!myOrders.length){container.innerHTML='<div class="empty-state"><p>No orders yet.</p><button class="btn-primary" style="margin-top:10px;font-size:12px;padding:9px 18px" onclick="showSec(\'shop\')">Browse Toys</button></div>';return;}var sc={Pending:'s-pending',Confirmed:'s-confirmed',Packed:'s-packed',Shipped:'s-shipped',Delivered:'s-delivered',Cancelled:'s-cancelled'};var h='';for(var i=0;i<myOrders.length;i++){var o=myOrders[i];var ci=TS.indexOf(o.status);var prog='<div class="order-prog">';for(var j=0;j<TS.length;j++){var cls=j<ci?'done':j===ci?'cur':'';prog+='<div class="ops"><div class="ops-circle '+cls+'"><img src="'+TI[j]+'" alt=""/></div><div class="ops-lbl '+cls+'">'+TS[j]+'</div></div>';if(j<TS.length-1)prog+='<div class="ops-line '+(j<ci?'done':'')+'"></div>';}prog+='</div>';var items='';for(var k=0;k<Math.min(o.items.length,2);k++){var item=o.items[k];items+='<div class="oci"><img src="'+item.img+'" alt="" loading="lazy"/><div><div class="oci-name">'+item.name+'</div><div class="oci-qty">Qty: '+item.qty+'</div></div></div>';}h+='<div class="order-card"><div class="order-card-hdr"><div><div class="order-card-id">#'+o.id+'</div><div class="order-card-date">'+o.date+'</div></div><span class="status-pill '+(sc[o.status]||'s-pending')+'">'+o.status+'</span></div>'+prog+'<div class="order-card-items">'+items+'</div><div class="order-card-ftr"><div class="order-total">'+fmt(o.total)+'</div><button class="order-track-btn" onclick="document.getElementById(\'track-input\').value=\''+o.id+'\';showSec(\'track\');trackOrder()">Track Order</button></div></div>';}container.innerHTML=h;}
 function renderWishlist(){var container=document.getElementById('wishlist-grid');if(!wishlist.length){container.innerHTML='<div class="empty-state" style="grid-column:span 2"><p>Wishlist is empty.</p><button class="btn-primary" style="margin-top:10px;font-size:12px;padding:9px 18px" onclick="showSec(\'shop\')">Browse Toys</button></div>';return;}var h='';for(var i=0;i<wishlist.length;i++){var p=null;for(var j=0;j<products.length;j++){if(products[j].id===wishlist[i]){p=products[j];break;}}if(!p)continue;h+='<div class="wl-item"><div class="wl-img"><img src="'+p.img+'" alt="" loading="lazy"/></div><div class="wl-body"><div class="wl-name">'+p.name+'</div><div class="wl-price">'+fmt(p.price)+'</div><div class="wl-actions"><button class="wl-atc" onclick="addCart(event,'+p.id+')">Add to Cart</button><button class="wl-rm" onclick="removeWishlist('+p.id+')"><img src="https://cdn-icons-png.flaticon.com/512/1828/1828843.png" alt=""/></button></div></div></div>';}container.innerHTML=h;}
-function toggleWishlist(id){var idx=wishlist.indexOf(id);if(idx>=0){wishlist.splice(idx,1);showToast('Removed from wishlist');}else{wishlist.push(id);showToast('Added to wishlist!');}var a=document.querySelector('.pf.active');if(a)a.click();}
+function toggleWishlist(id){var idx=wishlist.indexOf(id);if(idx>=0){wishlist.splice(idx,1);showToast('Removed from wishlist');}else{wishlist.push(id);showToast('Added to wishlist!');if(GD.connected)gdSaveWishlist(currentUser?currentUser.email:'Guest');}var a=document.querySelector('.pf.active');if(a)a.click();}
 function removeWishlist(id){wishlist=wishlist.filter(function(x){return x!==id;});renderWishlist();}
 function renderAddresses(){var container=document.getElementById('address-list');var addrs=[{type:'Home',addr:'14, Gandhi Nagar, RS Puram, Coimbatore - 641002',isDefault:true},{type:'Office',addr:'22, Anna Salai, T Nagar, Chennai - 600017',isDefault:false}];var h='';for(var i=0;i<addrs.length;i++){var a=addrs[i];h+='<div class="addr-card'+(a.isDefault?' default':'')+'"><div class="addr-type">'+a.type+(a.isDefault?'<span class="def-badge">Default</span>':'')+'</div><div class="addr-name">'+(currentUser?currentUser.name:'')+'</div><div class="addr-text">'+a.addr+'</div><div class="addr-actions"><button class="addr-btn" onclick="showToast(\'Edit coming soon!\')">Edit</button><button class="addr-btn" onclick="showToast(\'Deleted!\')">Delete</button></div></div>';}container.innerHTML=h;}
 function populateProfile(){if(!currentUser)return;document.getElementById('pf-name').value=currentUser.name||'';document.getElementById('pf-email').value=currentUser.email||'';document.getElementById('pf-phone').value=currentUser.phone||'';}
@@ -1374,132 +1409,211 @@ function showSec(id){var all=['home','shop','about','stores','customer-auth','ac
 function subscribe(){var v=document.getElementById('nl-email').value;showToast(v?'Welcome to the family!':'Enter your email.');}
 document.addEventListener('input',function(e){if(e.target.id==='cnum'){var v=e.target.value.replace(/\D/g,'').substring(0,16);e.target.value=v.replace(/(.{4})/g,'$1 ').trim();}if(e.target.id==='cexp'){var v=e.target.value.replace(/\D/g,'');if(v.length>=2)v=v.substring(0,2)+'/'+v.substring(2,4);e.target.value=v;}});
 
-// ==================== GOOGLE DRIVE SAVE ====================
-var GOOGLE_CLIENT_ID = '417862246341-06oppjp6onn0br7egg83419gc0nr65dr.apps.googleusercontent.com';
-var driveTokenClient = null;
-var driveAccessToken = null;
-var drivePendingAction = null;
-var driveApiLoaded = false;
+// ==================== GOOGLE DRIVE AUTO-SAVE ====================
+var GD = {
+  clientId: '417862246341-06oppjp6onn0br7egg83419gc0nr65dr.apps.googleusercontent.com',
+  scope: 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/spreadsheets',
+  token: null,
+  connected: false,
+  sheetIds: { orders: null, customers: null, wishlist: null },
+  folderId: '1j48hkbvVl6DYK9z775Uv6QsoN8EzeaHE'
+};
 
-function loadGoogleScripts(callback) {
-  if (typeof google !== 'undefined' && google.accounts) { callback(); return; }
+// -- Load Google API lazily --
+function gdLoadAPI(cb) {
+  if (typeof google !== 'undefined' && google.accounts) { cb(); return; }
   var s = document.createElement('script');
   s.src = 'https://accounts.google.com/gsi/client';
-  s.onload = function() { driveApiLoaded = true; callback(); };
-  s.onerror = function() { showDriveStatus('error','Could not load Google API. Check internet.'); };
+  s.onload = cb;
+  s.onerror = function(){ gdShowBanner('error','Could not load Google API. Check internet.'); };
   document.head.appendChild(s);
 }
 
-function initGoogleDriveClient() {
-  if (!driveTokenClient) {
-    driveTokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: GOOGLE_CLIENT_ID,
-      scope: 'https://www.googleapis.com/auth/drive.file',
-      callback: function(response) {
-        if (response.error) { showDriveStatus('error','Sign-in failed. Try again.'); return; }
-        driveAccessToken = response.access_token;
-        if (drivePendingAction) { executeDriveAction(drivePendingAction); drivePendingAction = null; }
+// -- Connect to Google Drive --
+function connectGDrive() {
+  gdLoadAPI(function() {
+    var client = google.accounts.oauth2.initTokenClient({
+      client_id: GD.clientId,
+      scope: GD.scope,
+      callback: function(resp) {
+        if (resp.error) { gdShowBanner('error','Google sign-in failed: ' + resp.error); return; }
+        GD.token = resp.access_token;
+        GD.connected = true;
+        document.getElementById('gdrive-connect-bar').style.display = 'none';
+        gdShowBanner('success','Google Drive Connected!','Saving to your specified Drive folder');
+        showToast('Google Drive connected!');
+        // Create Ambartery folder in Drive
+        gdCreateFolder();
       }
     });
-  }
+    client.requestAccessToken({ prompt: 'consent' });
+  });
 }
 
-function driveSignIn(action) {
-  drivePendingAction = action;
-  showDriveStatus('info','Loading Google...');
-  loadGoogleScripts(function() {
-    initGoogleDriveClient();
-    if (!driveAccessToken) {
-      driveTokenClient.requestAccessToken({ prompt: 'consent' });
-    } else {
-      executeDriveAction(action);
+// -- Use specified folder directly (no need to create) --
+function gdCreateFolder() {
+  // Folder ID already set - just create sheets inside it
+  gdCreateSheet('Orders', ['Order ID','Date','Customer Name','Email','Phone','Address','City','State','PIN','Items','Subtotal','Shipping','Discount','Total','Payment','Delivery','Status'], 'orders');
+  gdCreateSheet('Customers', ['Name','Email','Phone','Joined Date','Total Orders'], 'customers');
+  gdCreateSheet('Wishlist', ['Customer Email','Product ID','Product Name','Category','Price','Date Added'], 'wishlist');
+}
+
+// -- Create a Google Sheet --
+function gdCreateSheet(title, headers, key) {
+  gdFetch('POST', 'https://www.googleapis.com/drive/v3/files', {
+    name: 'Ambartery - ' + title,
+    mimeType: 'application/vnd.google-apps.spreadsheet',
+    parents: GD.folderId ? [GD.folderId] : []
+  }, function(data) {
+    if (data && data.id) {
+      GD.sheetIds[key] = data.id;
+      // Add header row
+      gdAppendRow(data.id, headers);
+      gdShowBanner('success','Sheet Created','Ambartery - ' + title + ' sheet ready in Drive');
     }
   });
 }
 
-function executeDriveAction(action) {
-  var content = '', filename = '', now = new Date().toLocaleDateString('en-IN');
-  if (action === 'order') {
-    var o = orders[0];
-    if (!o) { showDriveStatus('error','No order found.'); return; }
-    filename = 'Ambartery_Invoice_' + o.id + '.txt';
-    content = buildInvoice(o, now);
-  } else if (action === 'orders') {
-    if (!currentUser) { showDriveStatus('error','Please login first.'); return; }
-    var myOrds = orders.filter(function(o){ return o.customer.email.toLowerCase() === currentUser.email.toLowerCase(); });
-    if (!myOrds.length) { showDriveStatus('error','No orders found.'); return; }
-    filename = 'Ambartery_Orders_' + now.replace(/\//g,'-') + '.txt';
-    content = 'AMBARTERY ORDER HISTORY\nGenerated: ' + now + '\n' + '='.repeat(50) + '\n\n';
-    for (var i = 0; i < myOrds.length; i++) content += buildInvoice(myOrds[i], now) + '\n\n' + '-'.repeat(50) + '\n\n';
-  } else if (action === 'wishlist') {
-    filename = 'Ambartery_Wishlist_' + now.replace(/\//g,'-') + '.txt';
-    content = 'AMBARTERY WISHLIST\nGenerated: ' + now + '\n' + '='.repeat(50) + '\n\n';
-    if (!wishlist.length) { showDriveStatus('error','Wishlist is empty.'); return; }
-    for (var i = 0; i < wishlist.length; i++) {
-      var p = null; for (var j = 0; j < products.length; j++) { if (products[j].id === wishlist[i]) { p = products[j]; break; } }
-      if (p) content += (i+1) + '. ' + p.name + ' - ' + fmt(p.price) + '\n';
-    }
-  } else if (action === 'account') {
-    if (!currentUser) { showDriveStatus('error','Please login first.'); return; }
-    filename = 'Ambartery_Account_' + currentUser.name.replace(/\s+/g,'-') + '.txt';
-    content = 'AMBARTERY ACCOUNT DETAILS\nGenerated: ' + now + '\n' + '='.repeat(50) + '\n\n';
-    content += 'Name: ' + currentUser.name + '\nEmail: ' + currentUser.email + '\nPhone: ' + currentUser.phone + '\nMember since: ' + currentUser.joined;
+// -- Append a row to a Google Sheet --
+function gdAppendRow(sheetId, rowData) {
+  var url = 'https://sheets.googleapis.com/v4/spreadsheets/' + sheetId + '/values/Sheet1!A1:append?valueInputOption=USER_ENTERED';
+  gdFetch('POST', url, {
+    values: [rowData]
+  }, function(data) {
+    // Row appended successfully
+  });
+}
+
+// -- Save order to Sheets + create Invoice Doc --
+function gdSaveOrder(order) {
+  if (!GD.connected || !GD.token) return;
+  // Save to Orders Sheet
+  if (GD.sheetIds.orders) {
+    var items = order.items.map(function(i){ return i.name + ' x' + i.qty; }).join(', ');
+    gdAppendRow(GD.sheetIds.orders, [
+      order.id, order.date,
+      order.customer.name, order.customer.email, order.customer.phone,
+      order.address, order.city, order.state, order.pin,
+      items,
+      order.subtotal, order.shipping === 0 ? 'FREE' : order.shipping,
+      order.discount || 0, order.total,
+      order.payment, order.delivery, order.status
+    ]);
+    gdShowBanner('success','Order Saved to Drive','#' + order.id + ' added to Ambartery Orders sheet');
   }
-  uploadToDrive(filename, content);
+  // Create Invoice Google Doc
+  gdCreateInvoiceDoc(order);
 }
 
-function buildInvoice(o, now) {
-  var c = 'AMBARTERY INVOICE\nGenerated: ' + now + '\n' + '='.repeat(50) + '\n\n';
-  c += 'Order: #' + o.id + '\nDate: ' + o.date + '\nStatus: ' + o.status + '\n\n';
-  c += 'CUSTOMER\nName: ' + o.customer.name + '\nPhone: ' + o.customer.phone + '\nAddress: ' + o.address + ', ' + o.city + ' - ' + o.pin + '\n\nITEMS\n';
-  for (var i = 0; i < o.items.length; i++) c += o.items[i].name + ' x' + o.items[i].qty + ' = ' + fmt(o.items[i].price * o.items[i].qty) + '\n';
-  c += '\nSubtotal: ' + fmt(o.subtotal) + '\nShipping: ' + (o.shipping === 0 ? 'FREE' : fmt(o.shipping));
-  if (o.discount > 0) c += '\nDiscount: -' + fmt(o.discount);
-  c += '\nTOTAL: ' + fmt(o.total) + '\n\nPayment: ' + o.payment;
-  c += '\n\nThank you! Support: +91 9629805321';
-  return c;
-}
+// -- Create Invoice as Google Doc --
+function gdCreateInvoiceDoc(order) {
+  var now = new Date().toLocaleDateString('en-IN');
+  var content = 'AMBARTERY / OMIN MART\nOrder Invoice\n\n';
+  content += 'Order ID   : #' + order.id + '\n';
+  content += 'Date       : ' + order.date + '\n';
+  content += 'Status     : ' + order.status + '\n\n';
+  content += 'CUSTOMER DETAILS\n';
+  content += 'Name       : ' + order.customer.name + '\n';
+  content += 'Phone      : ' + order.customer.phone + '\n';
+  content += 'Address    : ' + order.address + ', ' + order.city + ', ' + order.state + ' - ' + order.pin + '\n\n';
+  content += 'ORDER ITEMS\n';
+  content += '----------------------------------------\n';
+  for (var i = 0; i < order.items.length; i++) {
+    content += order.items[i].name + ' x' + order.items[i].qty + '  =  ' + fmt(order.items[i].price * order.items[i].qty) + '\n';
+  }
+  content += '----------------------------------------\n';
+  content += 'Subtotal   : ' + fmt(order.subtotal) + '\n';
+  content += 'Shipping   : ' + (order.shipping === 0 ? 'FREE' : fmt(order.shipping)) + '\n';
+  if (order.discount > 0) content += 'Discount   : -' + fmt(order.discount) + '\n';
+  content += 'TOTAL      : ' + fmt(order.total) + '\n\n';
+  content += 'Payment    : ' + order.payment + '\n';
+  content += 'Delivery   : ' + (order.delivery === 'express' ? 'Express 2-3 days' : 'Standard 5-7 days') + '\n\n';
+  content += 'Thank you for shopping with Ambartery!\n';
+  content += 'Support: +91 9629805321 | ambartery.com\n';
+  content += 'Generated: ' + now;
 
-function uploadToDrive(filename, content) {
-  showDriveStatus('info','Saving to Google Drive...');
-  var boundary = 'ambartery_boundary_314159';
+  // Create as Google Doc
+  var boundary = 'ambartery_doc_boundary';
+  var metadata = { name: 'Invoice_' + order.id, mimeType: 'application/vnd.google-apps.document', parents: GD.folderId ? [GD.folderId] : [] };
   var body = '--' + boundary + '\r\nContent-Type: application/json\r\n\r\n' +
-    JSON.stringify({name: filename, mimeType: 'text/plain'}) +
+    JSON.stringify(metadata) +
     '\r\n--' + boundary + '\r\nContent-Type: text/plain\r\n\r\n' + content +
     '\r\n--' + boundary + '--';
   var xhr = new XMLHttpRequest();
   xhr.open('POST','https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart');
-  xhr.setRequestHeader('Authorization','Bearer ' + driveAccessToken);
+  xhr.setRequestHeader('Authorization','Bearer ' + GD.token);
   xhr.setRequestHeader('Content-Type','multipart/related; boundary="' + boundary + '"');
   xhr.onload = function() {
     if (xhr.status === 200 || xhr.status === 201) {
-      showDriveStatus('success','Saved! File "' + filename + '" added to your Google Drive.');
-      showToast('Saved to Google Drive!');
-    } else if (xhr.status === 401) {
-      driveAccessToken = null;
-      showDriveStatus('error','Session expired. Click save again.');
-    } else {
-      showDriveStatus('error','Save failed (Error ' + xhr.status + '). Try again.');
+      gdShowBanner('success','Invoice Saved!','Invoice_' + order.id + ' created in Google Drive');
     }
   };
-  xhr.onerror = function() { showDriveStatus('error','Connection error. Check internet.'); };
   xhr.send(body);
 }
 
-function showDriveStatus(type, msg) {
-  var els = document.querySelectorAll('.drive-status');
-  for (var i = 0; i < els.length; i++) {
-    els[i].className = 'drive-status';
-    if (type === 'success') { els[i].classList.add('show-success'); els[i].textContent = 'Saved! ' + msg; }
-    else if (type === 'error') { els[i].classList.add('show-error'); els[i].textContent = 'Error: ' + msg; }
-    else if (type === 'info') { els[i].classList.add('show-info'); els[i].textContent = msg; }
+// -- Save customer registration to Sheet --
+function gdSaveCustomer(user) {
+  if (!GD.connected || !GD.token || !GD.sheetIds.customers) return;
+  var orderCount = orders.filter(function(o){ return o.customer.email === user.email; }).length;
+  gdAppendRow(GD.sheetIds.customers, [
+    user.name, user.email, user.phone, user.joined, orderCount
+  ]);
+  gdShowBanner('success','Customer Saved!',user.name + ' added to Ambartery Customers sheet');
+}
+
+// -- Save wishlist to Sheet --
+function gdSaveWishlist(userEmail) {
+  if (!GD.connected || !GD.token || !GD.sheetIds.wishlist) return;
+  var now = new Date().toLocaleDateString('en-IN');
+  for (var i = 0; i < wishlist.length; i++) {
+    var p = null;
+    for (var j = 0; j < products.length; j++) { if (products[j].id === wishlist[i]) { p = products[j]; break; } }
+    if (p) gdAppendRow(GD.sheetIds.wishlist, [userEmail || 'Guest', p.id, p.name, p.cat, p.price, now]);
   }
+  gdShowBanner('success','Wishlist Saved!',wishlist.length + ' items saved to Ambartery Wishlist sheet');
+}
+
+// -- Generic authenticated fetch --
+function gdFetch(method, url, body, cb) {
+  var xhr = new XMLHttpRequest();
+  xhr.open(method, url);
+  xhr.setRequestHeader('Authorization', 'Bearer ' + GD.token);
+  xhr.setRequestHeader('Content-Type', 'application/json');
+  xhr.onload = function() {
+    try { cb(JSON.parse(xhr.responseText)); } catch(e) { cb(null); }
+  };
+  xhr.onerror = function() { cb(null); };
+  xhr.send(JSON.stringify(body));
+}
+
+// -- Show/hide Drive notification banner --
+function gdShowBanner(type, title, msg) {
+  var banner = document.getElementById('gdrive-banner');
+  var titleEl = document.getElementById('gdrive-banner-title');
+  var msgEl = document.getElementById('gdrive-banner-msg');
+  if (!banner) return;
+  titleEl.textContent = title || 'Google Drive';
+  msgEl.textContent = msg || '';
+  banner.style.borderColor = type === 'success' ? '#0f9d58' : type === 'error' ? '#ea4335' : '#4285F4';
+  titleEl.style.color = type === 'success' ? '#0f9d58' : type === 'error' ? '#ea4335' : '#1a73e8';
+  banner.classList.add('show');
+  setTimeout(function(){ banner.classList.remove('show'); }, 4000);
+}
+function hideGDriveBanner() {
+  document.getElementById('gdrive-banner').classList.remove('show');
+}
+
+// -- Show connect bar on page load --
+function gdInit() {
+  var bar = document.getElementById('gdrive-connect-bar');
+  if (bar) bar.style.display = 'flex';
 }
 
 renderProds(products);
 seedDemoOrders();
 renderDirs('car');
 showSec('home');
+gdInit();
 </script>
 </body>
 </html>
