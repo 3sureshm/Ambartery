@@ -644,6 +644,14 @@ footer{background:var(--wd);padding:24px 16px 14px}
 .gdrive-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
 .gdrive-connected .gdrive-status-dot{background:#0f9d58}
 .gdrive-disconnected .gdrive-status-dot{background:#ea4335}
+
+/* ===== GOOGLE SIGN IN ===== */
+.google-signin-btn{width:100%;padding:11px;background:#fff;color:#444;border:1.5px solid #ddd;border-radius:9px;font-size:13px;font-weight:600;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px;transition:all .2s;box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.google-signin-btn:hover{border-color:#4285F4;box-shadow:0 2px 8px rgba(66,133,244,.2)}
+.google-signin-btn img{width:20px;height:20px;object-fit:contain;flex-shrink:0}
+.google-signin-divider{display:flex;align-items:center;gap:10px;margin:12px 0}
+.google-signin-divider hr{flex:1;border:none;border-top:1px solid rgba(196,132,58,.2)}
+.google-signin-divider span{font-size:11px;color:var(--ts);white-space:nowrap}
 </style>
 </head>
 <body>
@@ -810,7 +818,11 @@ footer{background:var(--wd);padding:24px 16px 14px}
         <div class="auth-fg"><label>Password</label><div class="auth-inp-wrap"><img class="auth-inp-icon" src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt=""/><input type="password" id="login-pw" placeholder="Enter password"/><button class="eye-btn" onclick="toggleEye('login-pw',this)">show</button></div></div>
         <span class="auth-forgot" onclick="showToast('Reset link sent!')">Forgot Password?</span>
         <button class="auth-btn" onclick="doCustomerLogin()"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077063.png" alt=""/>Sign In to My Account</button>
-        <div class="auth-div"><hr/><span>or</span><hr/></div>
+        <div class="google-signin-divider"><hr/><span>or continue with</span><hr/></div>
+        <button class="google-signin-btn" onclick="googleSignIn()">
+          <img src="https://www.google.com/favicon.ico" alt="Google"/>
+          Sign in with Google
+        </button>
         <button class="auth-wa-btn" onclick="openWA('Hi! I want to login to Ambartery.')"><img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt=""/>Continue with WhatsApp</button>
         <div class="auth-terms">No account? <span onclick="switchAuthTab('signup')">Create one free</span></div>
       </div>
@@ -825,7 +837,11 @@ footer{background:var(--wd);padding:24px 16px 14px}
         <div class="auth-fg"><label>Password *</label><div class="auth-inp-wrap"><img class="auth-inp-icon" src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt=""/><input type="password" id="su-pw" placeholder="Min 6 characters"/><button class="eye-btn" onclick="toggleEye('su-pw',this)">show</button></div><div class="auth-err-msg" id="su-pw-err"></div></div>
         <div class="auth-fg"><label>Confirm Password *</label><div class="auth-inp-wrap"><img class="auth-inp-icon" src="https://cdn-icons-png.flaticon.com/512/3064/3064197.png" alt=""/><input type="password" id="su-pw2" placeholder="Re-enter password"/></div><div class="auth-err-msg" id="su-pw2-err"></div></div>
         <button class="auth-btn" onclick="doSignup()"><img src="https://cdn-icons-png.flaticon.com/512/1077/1077114.png" alt=""/>Create My Account</button>
-        <div class="auth-div"><hr/><span>or</span><hr/></div>
+        <div class="google-signin-divider"><hr/><span>or sign up with</span><hr/></div>
+        <button class="google-signin-btn" onclick="googleSignIn()">
+          <img src="https://www.google.com/favicon.ico" alt="Google"/>
+          Sign up with Google
+        </button>
         <button class="auth-wa-btn" onclick="openWA('Hi! I want to create an Ambartery account.')"><img src="https://cdn-icons-png.flaticon.com/512/733/733585.png" alt=""/>Sign Up with WhatsApp</button>
         <div class="auth-terms">Have an account? <span onclick="switchAuthTab('login')">Sign in</span></div>
       </div>
@@ -1632,6 +1648,119 @@ function asSaveCustomer(user) {
 
 function asSaveWishlist(email, items) {
   asSendData('wishlist', { email: email, items: items });
+}
+
+
+// ==================== GOOGLE SIGN IN ====================
+var GOOGLE_CLIENT_ID_AUTH = '417862246341-06oppjp6onn0br7egg83419gc0nr65dr.apps.googleusercontent.com';
+
+function loadGoogleSignIn(callback) {
+  if (typeof google !== 'undefined' && google.accounts && google.accounts.id) {
+    callback();
+    return;
+  }
+  var s = document.createElement('script');
+  s.src = 'https://accounts.google.com/gsi/client';
+  s.onload = callback;
+  s.onerror = function() { showToast('Could not load Google Sign-In.'); };
+  document.head.appendChild(s);
+}
+
+function googleSignIn() {
+  loadGoogleSignIn(function() {
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID_AUTH,
+      callback: handleGoogleSignIn,
+      auto_select: false,
+      cancel_on_tap_outside: true
+    });
+    google.accounts.id.prompt(function(notification) {
+      if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+        // Fallback to popup
+        google.accounts.oauth2.initTokenClient({
+          client_id: GOOGLE_CLIENT_ID_AUTH,
+          scope: 'email profile',
+          callback: function(resp) {
+            if (resp.access_token) fetchGoogleProfile(resp.access_token);
+          }
+        }).requestAccessToken({ prompt: 'select_account' });
+      }
+    });
+  });
+}
+
+function handleGoogleSignIn(response) {
+  // Decode JWT token to get user info
+  try {
+    var payload = JSON.parse(atob(response.credential.split('.')[1]));
+    processGoogleUser({
+      name: payload.name,
+      email: payload.email,
+      picture: payload.picture
+    });
+  } catch(e) {
+    showToast('Google sign-in failed. Try again.');
+  }
+}
+
+function fetchGoogleProfile(accessToken) {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', 'https://www.googleapis.com/oauth2/v2/userinfo');
+  xhr.setRequestHeader('Authorization', 'Bearer ' + accessToken);
+  xhr.onload = function() {
+    try {
+      var profile = JSON.parse(xhr.responseText);
+      processGoogleUser({
+        name: profile.name,
+        email: profile.email,
+        picture: profile.picture
+      });
+    } catch(e) {
+      showToast('Could not get Google profile.');
+    }
+  };
+  xhr.send();
+}
+
+function processGoogleUser(profile) {
+  if (!profile.email) { showToast('Could not get email from Google.'); return; }
+
+  // Check if already registered
+  var existing = null;
+  for (var i = 0; i < registeredUsers.length; i++) {
+    if (registeredUsers[i].email.toLowerCase() === profile.email.toLowerCase()) {
+      existing = registeredUsers[i];
+      break;
+    }
+  }
+
+  if (existing) {
+    // Login existing user
+    currentUser = existing;
+    updateUserNav();
+    populateAccount();
+    showSec('account');
+    showToast('Welcome back, ' + existing.name.split(' ')[0] + '!');
+  } else {
+    // Register new user with Google profile
+    var newUser = {
+      name: profile.name || profile.email.split('@')[0],
+      email: profile.email,
+      phone: '',
+      password: 'google-auth-' + Date.now(),
+      joined: new Date().toISOString().split('T')[0],
+      avatar: profile.picture || '',
+      loginMethod: 'google'
+    };
+    registeredUsers.push(newUser);
+    currentUser = newUser;
+    // Save to Google Sheet
+    asSaveCustomer(newUser);
+    updateUserNav();
+    populateAccount();
+    showSec('account');
+    showToast('Welcome to Ambartery, ' + newUser.name.split(' ')[0] + '!');
+  }
 }
 
 renderProds(products);
