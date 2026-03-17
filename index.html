@@ -2148,24 +2148,40 @@ var APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyaEuDWzNgxmG4VK2
 
 function asSendData(type, payload) {
   if (!APPS_SCRIPT_URL) return;
+  var data = JSON.stringify({ type: type, payload: payload });
+
+  // Method 1: XMLHttpRequest (works most of the time)
   try {
-    // Use fetch with no-cors to avoid CORS issues with Apps Script
-    fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
-      headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ type: type, payload: payload })
-    }).then(function() {
-      console.log('Data sent to Apps Script: ' + type);
-    }).catch(function(err) {
-      console.log('Apps Script error: ' + err);
-    });
-  } catch(e) {
-    // Fallback to XHR
     var xhr = new XMLHttpRequest();
-    xhr.open('POST', APPS_SCRIPT_URL);
+    xhr.open('POST', APPS_SCRIPT_URL, true);
     xhr.setRequestHeader('Content-Type', 'text/plain');
-    xhr.send(JSON.stringify({ type: type, payload: payload }));
+    xhr.onreadystatechange = function() {
+      if (xhr.readyState === 4) {
+        console.log('Apps Script response: ' + xhr.status);
+      }
+    };
+    xhr.send(data);
+  } catch(e) {
+    // Method 2: Hidden form submission via iframe (always works, no CORS)
+    try {
+      var iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      document.body.appendChild(iframe);
+      var form = document.createElement('form');
+      form.method = 'POST';
+      form.action = APPS_SCRIPT_URL;
+      form.target = iframe.name = 'as_frame_' + Date.now();
+      var input = document.createElement('input');
+      input.type = 'hidden';
+      input.name = 'data';
+      input.value = data;
+      form.appendChild(input);
+      document.body.appendChild(form);
+      form.submit();
+      setTimeout(function(){ document.body.removeChild(form); document.body.removeChild(iframe); }, 3000);
+    } catch(e2) {
+      console.log('Apps Script send failed:', e2);
+    }
   }
 }
 
