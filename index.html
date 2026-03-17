@@ -737,11 +737,11 @@ footer{background:var(--wd);padding:24px 16px 14px}
 .gdrive-banner-text strong{display:block;font-size:12px;color:#1a73e8;margin-bottom:1px}
 .gdrive-banner-text span{font-size:10px;color:#666}
 .gdrive-banner-close{margin-left:auto;background:none;border:none;cursor:pointer;color:#999;font-size:14px;padding:0 0 0 8px;line-height:1}
-.gdrive-connect-bar{background:linear-gradient(135deg,#1a73e8,#4285F4);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
-.gdrive-connect-bar p{font-size:11px;color:rgba(255,255,255,.9);margin:0;display:flex;align-items:center;gap:6px}
-.gdrive-connect-bar p img{width:16px;height:16px;filter:brightness(0) invert(1)}
-.gdrive-connect-btn{padding:6px 14px;background:#fff;color:#1a73e8;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;white-space:nowrap}
-.gdrive-connect-btn:hover{background:#f0f4ff}
+
+
+
+
+
 .gdrive-status-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px}
 .gdrive-connected .gdrive-status-dot{background:#0f9d58}
 .gdrive-disconnected .gdrive-status-dot{background:#ea4335}
@@ -1123,18 +1123,15 @@ img { max-width: 100%; height: auto; }
 /* ── Horizontal scroll prevention ── */
 body { overflow-x: hidden; }
 .admin-main { overflow-x: hidden; }
+
+/* Force hide Google Drive connect bar - auto-save now via Apps Script */
+#gdrive-connect-bar { display: none !important; }
 </style>
 </head>
 <body>
 <!-- NAV -->
 
-<!-- GOOGLE DRIVE CONNECT BAR -->
-<div id="gdrive-connect-bar" class="gdrive-connect-bar" style="display:none">
-  <p><img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt=""/>
-    Connect Google Drive to auto-save orders, customers and wishlist data
-  </p>
-  <button class="gdrive-connect-btn" onclick="connectGDrive()">Connect Drive</button>
-</div>
+<!-- Google Drive connect bar removed - auto-save via Apps Script -->
 <!-- GOOGLE DRIVE SAVE NOTIFICATION -->
 <div class="gdrive-banner" id="gdrive-banner">
   <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt="Drive"/>
@@ -1194,8 +1191,8 @@ body { overflow-x: hidden; }
     <div class="hero-r">
       <div class="hero-img-card"><img src="https://images.unsplash.com/photo-1558877385-81a1c7e67d72?w=500&q=80" alt="Wooden Trains"/><div class="lbl">Train Sets</div></div>
       <div class="hero-img-card"><img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=500&q=80" alt="Wooden Puzzles"/><div class="lbl">Puzzles</div></div>
-      <div class="hero-img-card"><img src="https://images.unsplash.com/photo-1574068468668-a05a11f871da?w=500&q=80" alt="Train Set"/><div class="lbl">Classic Toys</div></div>
-      <div class="hero-img-card"><img src="https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500&q=80" alt="Wooden Blocks"/><div class="lbl">Building Blocks</div></div>
+      <div class="hero-img-card"><img src="https://images.unsplash.com/photo-1558877385-81a1c7e67d72?w=500&q=80" alt="Train Set"/><div class="lbl">Classic Toys</div></div>
+      <div class="hero-img-card"><img src="https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=500&q=80" alt="Wooden Blocks"/><div class="lbl">Building Blocks</div></div>
     </div>
   </div>
   <div class="trust-bar">
@@ -1239,7 +1236,7 @@ body { overflow-x: hidden; }
 <div id="sec-about" style="display:none">
   <div class="about-sec">
     <div class="about-img-grid">
-      <div class="about-img-box"><img src="https://images.unsplash.com/photo-1603354351226-d82bd4a635a3?w=500&q=80" alt=""/></div>
+      <div class="about-img-box"><img src="https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=500&q=80" alt=""/></div>
       <div class="about-img-box"><img src="https://images.unsplash.com/photo-1565193566173-7a0ee3dbe261?w=500&q=80" alt=""/></div>
       <div class="about-img-box wide"><img src="https://images.unsplash.com/photo-1598300042247-d088f8ab3a91?w=800&q=80" alt=""/></div>
     </div>
@@ -1805,7 +1802,7 @@ var WA='919629805321';
 function openWA(m){window.open('https://wa.me/'+WA+'?text='+encodeURIComponent(m),'_blank');}
 function shareLocation(){var u='https://maps.app.goo.gl/CwKxvnbBwyNK7yQQ9';if(navigator.clipboard)navigator.clipboard.writeText(u).then(function(){showToast('Maps link copied!');});else showToast('Link: '+u);}
 function showToast(msg){var t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(function(){t.classList.remove('show');},2800);}
-var IMGS={stacking:'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500&q=80',top:'https://images.unsplash.com/photo-1558877385-81a1c7e67d72?w=500&q=80',puzzle:'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=500&q=80',elephant:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80',train:'https://images.unsplash.com/photo-1574068468668-a05a11f871da?w=500&q=80',alphabet:'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=500&q=80',dolls:'https://images.unsplash.com/photo-1603354351226-d82bd4a635a3?w=500&q=80',abacus:'https://images.unsplash.com/photo-1605465337139-e80b97bf2c0c?w=500&q=80'};
+var IMGS={stacking:'https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=500&q=80',top:'https://images.unsplash.com/photo-1574068468668-a05a11f871da?w=500&q=80',puzzle:'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=500&q=80',elephant:'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=500&q=80',train:'https://images.unsplash.com/photo-1558877385-81a1c7e67d72?w=500&q=80',alphabet:'https://images.unsplash.com/photo-1503454537195-1dcabb73ffb9?w=500&q=80',dolls:'https://images.unsplash.com/photo-1603354351226-d82bd4a635a3?w=500&q=80',abacus:'https://images.unsplash.com/photo-1605465337139-e80b97bf2c0c?w=500&q=80'};
 var products=[{id:1,name:'Classic Stacking Tower',cat:'Classic Toys',price:849,orig:1099,img:IMGS.stacking,badge:'hot',stars:5,key:'classic',stock:42,lowAt:10,visible:true},{id:2,name:'Channapatna Spinning Top',cat:'Classic Toys',price:349,img:IMGS.top,badge:'new',stars:5,key:'classic',stock:8,lowAt:10,visible:true},{id:3,name:'Wooden Animal Puzzle',cat:'Puzzles',price:699,orig:899,img:IMGS.puzzle,badge:'sale',stars:4,key:'puzzle',stock:35,lowAt:10,visible:true},{id:4,name:'Pull-Along Elephant',cat:'Figurines',price:1199,img:IMGS.elephant,badge:'new',stars:5,key:'figurine',stock:15,lowAt:10,visible:true},{id:5,name:'Handpainted Train Set',cat:'Vehicles',price:1899,orig:2499,img:IMGS.train,badge:'hot',stars:5,key:'vehicle',stock:5,lowAt:10,visible:true},{id:6,name:'Alphabet Learning Board',cat:'Educational',price:999,img:IMGS.alphabet,stars:4,key:'educational',stock:28,lowAt:10,visible:true},{id:7,name:'Nesting Dolls Set',cat:'Figurines',price:1499,img:IMGS.dolls,badge:'hot',stars:5,key:'figurine',stock:2,lowAt:10,visible:true},{id:8,name:'Wooden Abacus',cat:'Educational',price:749,orig:899,img:IMGS.abacus,badge:'sale',stars:4,key:'educational',stock:19,lowAt:10,visible:true}];
 var TS=['Pending','Confirmed','Packed','Shipped','Delivered'];
 var TI=['https://cdn-icons-png.flaticon.com/512/1827/1827379.png','https://cdn-icons-png.flaticon.com/512/190/190411.png','https://cdn-icons-png.flaticon.com/512/2830/2830304.png','https://cdn-icons-png.flaticon.com/512/3063/3063176.png','https://cdn-icons-png.flaticon.com/512/1077/1077063.png'];
@@ -2135,10 +2132,7 @@ function hideGDriveBanner() {
 }
 
 // -- Show connect bar on page load --
-function gdInit() {
-  var bar = document.getElementById('gdrive-connect-bar');
-  if (bar) bar.style.display = 'flex';
-}
+function gdInit() { /* Google Drive connect bar disabled - using Apps Script */ }
 
 
 // ==================== APPS SCRIPT AUTO-SAVE ====================
@@ -2567,7 +2561,6 @@ seedDemoOrders();
 loadOrdersFromStorage();
 renderDirs('car');
 showSec('home');
-gdInit();
 </script>
 </body>
 </html>
