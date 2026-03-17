@@ -1126,6 +1126,23 @@ body { overflow-x: hidden; }
 
 /* Force hide Google Drive connect bar - auto-save now via Apps Script */
 #gdrive-connect-bar { display: none !important; }
+
+/* ===== GITHUB AUTO DEPLOY ===== */
+.deploy-card{background:linear-gradient(135deg,#1a1a2e,#16213e);border-radius:12px;padding:16px;border:1.5px solid rgba(255,255,255,.1);margin-top:14px}
+.deploy-card h4{font-family:'Libre Baskerville',serif;font-size:15px;color:#fff;margin-bottom:4px;display:flex;align-items:center;gap:7px}
+.deploy-card h4 img{width:16px;height:16px;filter:brightness(0) invert(1)}
+.deploy-card p{font-size:11px;color:rgba(255,255,255,.5);margin-bottom:12px}
+.deploy-btn{width:100%;padding:12px;background:linear-gradient(135deg,#238636,#2ea043);color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;font-family:'Nunito',sans-serif;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:8px}
+.deploy-btn:hover{background:linear-gradient(135deg,#2ea043,#3fb950)}
+.deploy-btn img{width:16px;height:16px;filter:brightness(0) invert(1)}
+.deploy-btn:disabled{opacity:.5;cursor:not-allowed}
+.deploy-token-field{display:flex;flex-direction:column;gap:3px;margin-bottom:10px}
+.deploy-token-field label{font-size:10px;font-weight:700;color:rgba(255,255,255,.6);letter-spacing:.5px}
+.deploy-token-field input{padding:9px 11px;border:1.5px solid rgba(255,255,255,.15);border-radius:7px;font-size:13px;font-family:'Nunito',sans-serif;color:#fff;background:rgba(255,255,255,.08);outline:none}
+.deploy-status{font-size:11px;padding:8px 10px;border-radius:6px;margin-top:6px;display:none}
+.deploy-status.success{background:rgba(46,160,67,.2);color:#3fb950;border:1px solid rgba(46,160,67,.3);display:block}
+.deploy-status.error{background:rgba(248,81,73,.15);color:#f85149;border:1px solid rgba(248,81,73,.3);display:block}
+.deploy-status.loading{background:rgba(56,139,253,.15);color:#58a6ff;border:1px solid rgba(56,139,253,.3);display:block}
 </style>
 </head>
 <body>
@@ -1700,6 +1717,23 @@ body { overflow-x: hidden; }
             <div class="set-field"><label>Google Maps Link</label><input id="set-maps" value="https://maps.app.goo.gl/CwKxvnbBwyNK7yQQ9"/></div>
             <button class="save-settings-btn" onclick="saveSettings('Social links')">Save Social Links</button>
           </div>
+          <!-- GITHUB AUTO DEPLOY CARD -->
+          <div class="deploy-card">
+            <h4><img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" alt="GitHub"/>Auto Deploy to GitHub</h4>
+            <p>Push your latest site changes directly to GitHub Pages with one click. No manual upload needed!</p>
+            <div class="deploy-token-field">
+              <label>GitHub Personal Access Token</label>
+              <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxxxxxxxxxx" oninput="saveGHToken(this.value)"/>
+            </div>
+            <button class="deploy-btn" id="deploy-btn" onclick="deployToGitHub()">
+              <img src="https://cdn-icons-png.flaticon.com/512/25/25231.png" alt=""/>
+              Deploy to GitHub Pages
+            </button>
+            <div style="font-size:10px;color:rgba(255,255,255,.3);text-align:center">
+              Repo: 3sureshm/Ambartery | Branch: main | File: index.html
+            </div>
+            <div class="deploy-status" id="deploy-status"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -1914,7 +1948,9 @@ function sendContactForm(){var n=document.getElementById('cf-name').value.trim()
 function handleAdminClick(){if(isAdminLoggedIn)showSec('admin');else showSec('admin-login');}
 function doAdminLogin(){var now=Date.now();if(now<lockedUntil){showToast('Locked. Wait '+Math.ceil((lockedUntil-now)/1000)+'s');return;}var u=document.getElementById('login-user').value.trim();var p=document.getElementById('login-pass').value;var errEl=document.getElementById('login-error'),lockedEl=document.getElementById('login-locked');if(u===ADMIN_USER&&p===ADMIN_PASS){isAdminLoggedIn=true;loginAttempts=0;errEl.classList.remove('show');lockedEl.classList.remove('show');document.getElementById('login-user').value='';document.getElementById('login-pass').value='';document.getElementById('login-attempts').textContent='';seedDemoOrders();showSec('admin');showAdminPanel('dashboard');showToast('Welcome, Admin!');}else{loginAttempts++;errEl.classList.add('show');document.getElementById('login-user').classList.add('err-input');document.getElementById('login-pass').classList.add('err-input');setTimeout(function(){document.getElementById('login-user').classList.remove('err-input');document.getElementById('login-pass').classList.remove('err-input');},700);var rem=MAX_ATT-loginAttempts;if(rem>0)document.getElementById('login-attempts').textContent=rem+' attempt'+(rem>1?'s':'')+' remaining';if(loginAttempts>=MAX_ATT){lockedUntil=Date.now()+(LOCK_SECS*1000);errEl.classList.remove('show');lockedEl.classList.add('show');document.getElementById('admin-login-btn').disabled=true;document.getElementById('admin-login-btn').style.opacity='.5';document.getElementById('login-attempts').textContent='';var secs=LOCK_SECS;document.getElementById('lockdown-timer').textContent=secs;lockTimer=setInterval(function(){secs--;document.getElementById('lockdown-timer').textContent=secs;if(secs<=0){clearInterval(lockTimer);loginAttempts=0;lockedUntil=0;lockedEl.classList.remove('show');document.getElementById('admin-login-btn').disabled=false;document.getElementById('admin-login-btn').style.opacity='1';document.getElementById('login-attempts').textContent='Try again.';}},1000);}}}
 function adminLogout(){isAdminLoggedIn=false;showToast('Logged out.');showSec('home');}
-function showAdminPanel(p){var contents=document.querySelectorAll('.admin-panel-content');for(var i=0;i<contents.length;i++)contents[i].classList.remove('active');var navItems=document.querySelectorAll('.admin-nav-item');for(var i=0;i<navItems.length;i++)navItems[i].classList.remove('active');document.getElementById('ap-'+p).classList.add('active');var navEl=document.getElementById('anav-'+p);if(navEl)navEl.classList.add('active');if(p==='dashboard')renderDashboard();else if(p==='orders')renderOrdersTable();else if(p==='pending')renderFilteredTable('pending-table-container',orders.filter(function(o){return o.status==='Pending';}));else if(p==='shipped')renderFilteredTable('shipped-table-container',orders.filter(function(o){return o.status==='Shipped';}));else if(p==='delivered')renderFilteredTable('delivered-table-container',orders.filter(function(o){return o.status==='Delivered';}));else if(p==='customers')renderCustomersTable();else if(p==='inventory')renderInventory();else if(p==='promos')renderPromoCodes();}
+function showAdminPanel(p){
+  // Load saved settings when opening admin panel
+  if(p==='settings') setTimeout(loadSettings, 100);var contents=document.querySelectorAll('.admin-panel-content');for(var i=0;i<contents.length;i++)contents[i].classList.remove('active');var navItems=document.querySelectorAll('.admin-nav-item');for(var i=0;i<navItems.length;i++)navItems[i].classList.remove('active');document.getElementById('ap-'+p).classList.add('active');var navEl=document.getElementById('anav-'+p);if(navEl)navEl.classList.add('active');if(p==='dashboard')renderDashboard();else if(p==='orders')renderOrdersTable();else if(p==='pending')renderFilteredTable('pending-table-container',orders.filter(function(o){return o.status==='Pending';}));else if(p==='shipped')renderFilteredTable('shipped-table-container',orders.filter(function(o){return o.status==='Shipped';}));else if(p==='delivered')renderFilteredTable('delivered-table-container',orders.filter(function(o){return o.status==='Delivered';}));else if(p==='customers')renderCustomersTable();else if(p==='inventory')renderInventory();else if(p==='promos')renderPromoCodes();}
 function renderDashboard(){document.getElementById('admin-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',year:'numeric',month:'long',day:'numeric'});var total=orders.length,pending=orders.filter(function(o){return o.status==='Pending';}).length,revenue=0;for(var i=0;i<orders.length;i++){if(orders[i].status!=='Cancelled')revenue+=orders[i].total;}var lowStock=products.filter(function(p){return p.stock<=p.lowAt;}).length;document.getElementById('stats-row').innerHTML='<div class="stat-card"><img class="stat-card-icon" src="https://cdn-icons-png.flaticon.com/512/2830/2830304.png" alt=""/><div class="stat-card-val">'+total+'</div><div class="stat-card-lbl">Total Orders</div></div><div class="stat-card"><img class="stat-card-icon" src="https://cdn-icons-png.flaticon.com/512/1827/1827379.png" alt=""/><div class="stat-card-val">'+pending+'</div><div class="stat-card-lbl">Pending</div><div class="stat-card-change" style="color:'+(pending>0?'#C0392B':'var(--leaf)')+'">'+( pending>0?'Needs attention':'All clear')+'</div></div><div class="stat-card"><img class="stat-card-icon" src="https://cdn-icons-png.flaticon.com/512/2489/2489756.png" alt=""/><div class="stat-card-val">'+fmt(revenue)+'</div><div class="stat-card-lbl">Revenue</div></div><div class="stat-card"><img class="stat-card-icon" src="https://cdn-icons-png.flaticon.com/512/679/679821.png" alt=""/><div class="stat-card-val" style="color:'+(lowStock>0?'var(--red)':'var(--leaf)')+'">'+lowStock+'</div><div class="stat-card-lbl">Stock Alerts</div><div class="stat-card-change" style="color:'+(lowStock>0?'#C0392B':'var(--leaf)')+'">'+( lowStock>0?'Restock needed':'All stocked')+'</div></div>';document.getElementById('recent-orders-table').innerHTML=buildOrderTable(orders.slice(0,5));}
 function renderOrdersTable(){var search=(document.getElementById('order-search')||{}).value||'';var filter=(document.getElementById('order-filter')||{}).value||'all';var data=orders;if(search)data=data.filter(function(o){return o.id.indexOf(search.toUpperCase())>=0||o.customer.name.toLowerCase().indexOf(search.toLowerCase())>=0;});if(filter!=='all')data=data.filter(function(o){return o.status===filter;});document.getElementById('orders-table-container').innerHTML=buildOrderTable(data);}
 function renderFilteredTable(cid,data){document.getElementById(cid).innerHTML=buildOrderTable(data);}
@@ -1958,7 +1994,119 @@ function applyMaintToggle(btn){var on=btn.classList.contains('on');showToast(on?
 function applyBannerToggle(btn){var on=btn.classList.contains('on');var b=document.getElementById('announcement-banner');if(b)b.style.display=on?'block':'none';showToast('Banner '+(on?'shown':'hidden'));}
 function selectBannerColor(color,el){document.querySelectorAll('.color-swatch').forEach(function(s){s.classList.remove('selected');});el.classList.add('selected');var preview=document.getElementById('banner-preview');if(preview)preview.style.background=color;}
 function updateBannerPreview(){var msg=document.getElementById('set-banner-msg').value;var preview=document.getElementById('banner-preview');if(preview)preview.textContent=msg;}
-function saveSettings(section){showToast(section+' saved!');}
+function saveSettings(section) {
+  // Save ALL settings to localStorage
+  var settings = {
+    // Store info
+    storeName:    (document.getElementById('set-store-name') || {}).value || '',
+    tagline:      (document.getElementById('set-tagline') || {}).value || '',
+    phone:        (document.getElementById('set-phone') || {}).value || '',
+    address:      (document.getElementById('set-address') || {}).value || '',
+    // Shipping
+    freeShip:     (document.getElementById('set-free-ship') || {}).value || '999',
+    stdShip:      (document.getElementById('set-std-ship') || {}).value || '49',
+    expShip:      (document.getElementById('set-exp-ship') || {}).value || '99',
+    stdDays:      (document.getElementById('set-std-days') || {}).value || '5-7 days',
+    expDays:      (document.getElementById('set-exp-days') || {}).value || '2-3 days',
+    // Banner
+    bannerMsg:    (document.getElementById('set-banner-msg') || {}).value || '',
+    // Social
+    waNumber:     (document.getElementById('set-wa') || {}).value || '',
+    insta:        (document.getElementById('set-insta') || {}).value || '',
+    facebook:     (document.getElementById('set-fb') || {}).value || '',
+    mapsUrl:      (document.getElementById('set-maps') || {}).value || '',
+    // Hours
+    wkOpen:       (document.getElementById('set-wk-open') || {}).value || '9:00 AM',
+    wkClose:      (document.getElementById('set-wk-close') || {}).value || '7:00 PM',
+    sunOpen:      (document.getElementById('set-sun-open') || {}).value || '10:00 AM',
+    sunClose:     (document.getElementById('set-sun-close') || {}).value || '5:00 PM',
+    // Toggles
+    togCod:       document.getElementById('tog-cod') ? document.getElementById('tog-cod').classList.contains('on') : true,
+    togExpress:   document.getElementById('tog-express') ? document.getElementById('tog-express').classList.contains('on') : true,
+    togWishlist:  document.getElementById('tog-wishlist') ? document.getElementById('tog-wishlist').classList.contains('on') : true,
+    togReviews:   document.getElementById('tog-reviews') ? document.getElementById('tog-reviews').classList.contains('on') : true,
+    togNewsletter:document.getElementById('tog-newsletter') ? document.getElementById('tog-newsletter').classList.contains('on') : true,
+    togWafloat:   document.getElementById('tog-wafloat') ? document.getElementById('tog-wafloat').classList.contains('on') : true,
+    togMaint:     document.getElementById('tog-maintenance') ? document.getElementById('tog-maintenance').classList.contains('on') : false,
+    togGuest:     document.getElementById('tog-guest') ? document.getElementById('tog-guest').classList.contains('on') : true,
+    togBanner:    document.getElementById('tog-banner') ? document.getElementById('tog-banner').classList.contains('on') : false,
+    togSunday:    document.getElementById('tog-sunday') ? document.getElementById('tog-sunday').classList.contains('on') : true,
+  };
+  try {
+    localStorage.setItem('ambartery_settings', JSON.stringify(settings));
+    showToast(section + ' saved permanently!');
+  } catch(e) {
+    showToast(section + ' saved!');
+  }
+}
+
+function loadSettings() {
+  try {
+    var saved = localStorage.getItem('ambartery_settings');
+    if (!saved) return;
+    var s = JSON.parse(saved);
+
+    // Restore text fields
+    var fields = {
+      'set-store-name': s.storeName, 'set-tagline': s.tagline,
+      'set-phone': s.phone, 'set-address': s.address,
+      'set-free-ship': s.freeShip, 'set-std-ship': s.stdShip,
+      'set-exp-ship': s.expShip, 'set-std-days': s.stdDays,
+      'set-exp-days': s.expDays, 'set-banner-msg': s.bannerMsg,
+      'set-wa': s.waNumber, 'set-insta': s.insta,
+      'set-fb': s.facebook, 'set-maps': s.mapsUrl,
+      'set-wk-open': s.wkOpen, 'set-wk-close': s.wkClose,
+      'set-sun-open': s.sunOpen, 'set-sun-close': s.sunClose
+    };
+    for (var id in fields) {
+      var el = document.getElementById(id);
+      if (el && fields[id]) el.value = fields[id];
+    }
+
+    // Restore toggles
+    var toggles = {
+      'tog-cod': s.togCod, 'tog-express': s.togExpress,
+      'tog-wishlist': s.togWishlist, 'tog-reviews': s.togReviews,
+      'tog-newsletter': s.togNewsletter, 'tog-wafloat': s.togWafloat,
+      'tog-maintenance': s.togMaint, 'tog-guest': s.togGuest,
+      'tog-banner': s.togBanner, 'tog-sunday': s.togSunday
+    };
+    for (var tid in toggles) {
+      var tel = document.getElementById(tid);
+      if (tel) {
+        if (toggles[tid]) { tel.classList.add('on'); tel.classList.remove('off'); }
+        else { tel.classList.remove('on'); tel.classList.add('off'); }
+        var knob = tel.querySelector('.toggle-knob');
+        if (knob) knob.style.left = toggles[tid] ? '21px' : '3px';
+      }
+    }
+
+    // Apply saved settings to site
+    if (s.waNumber) WA = s.waNumber.replace(/[^0-9]/g,'');
+    if (s.togBanner) {
+      var banner = document.getElementById('announcement-banner');
+      if (banner) banner.style.display = 'block';
+      if (s.bannerMsg) {
+        var bannerText = document.getElementById('announcement-text');
+        if (bannerText) bannerText.textContent = s.bannerMsg;
+      }
+    }
+    if (!s.togWafloat) {
+      var waf = document.getElementById('wa-float');
+      if (waf) waf.style.display = 'none';
+    }
+    if (!s.togNewsletter) {
+      var nl = document.querySelector('.newsletter');
+      if (nl) nl.style.display = 'none';
+    }
+
+    // Update banner preview
+    updateBannerPreview();
+    console.log('Settings loaded from storage!');
+  } catch(e) {
+    console.log('Settings load error:', e);
+  }
+}
 function showSec(id){var all=['home','shop','about','stores','customer-auth','account','checkout','success','track','contact','admin-login','admin'];for(var i=0;i<all.length;i++){var el=document.getElementById('sec-'+all[i]);if(el)el.style.display=all[i]===id?'block':'none';}var navPages=['home','shop','about','stores','track','contact'];for(var i=0;i<navPages.length;i++){var b=document.getElementById('pn-'+navPages[i]);if(b)b.classList.toggle('active',navPages[i]===id);}var hideFooter=['checkout','success','admin-login','admin','customer-auth','account'].indexOf(id)>=0;var footer=document.getElementById('site-footer');if(footer)footer.style.display=hideFooter?'none':'block';var mainNav=document.getElementById('main-nav');if(mainNav)mainNav.style.display=['admin-login','admin','customer-auth','account'].indexOf(id)>=0?'none':'flex';var waf=document.getElementById('wa-float');if(waf)waf.style.display=['admin-login','admin','customer-auth'].indexOf(id)>=0?'none':'flex';window.scrollTo({top:0,behavior:'smooth'});}
 function subscribe(){var v=document.getElementById('nl-email').value;showToast(v?'Welcome to the family!':'Enter your email.');}
 document.addEventListener('input',function(e){if(e.target.id==='cnum'){var v=e.target.value.replace(/\D/g,'').substring(0,16);e.target.value=v.replace(/(.{4})/g,'$1 ').trim();}if(e.target.id==='cexp'){var v=e.target.value.replace(/\D/g,'');if(v.length>=2)v=v.substring(0,2)+'/'+v.substring(2,4);e.target.value=v;}});
@@ -2581,7 +2729,129 @@ function loadMongoConfig() {
   if (savedKey) MONGO_CONFIG.apiKey = savedKey;
 }
 
+
+// ==================== GITHUB AUTO DEPLOY ====================
+var GH_REPO_OWNER = '3sureshm';
+var GH_REPO_NAME  = 'Ambartery';
+var GH_FILE_PATH  = 'index.html';
+var GH_BRANCH     = 'main';
+
+function saveGHToken(token) {
+  if (token && token.startsWith('ghp_')) {
+    localStorage.setItem('gh_token', token);
+  }
+}
+
+function loadGHToken() {
+  var token = localStorage.getItem('gh_token');
+  var el = document.getElementById('gh-token');
+  if (el && token) el.value = token;
+  return token || '';
+}
+
+function setDeployStatus(type, msg) {
+  var el = document.getElementById('deploy-status');
+  var btn = document.getElementById('deploy-btn');
+  if (!el) return;
+  el.className = 'deploy-status ' + type;
+  el.textContent = msg;
+  if (btn) btn.disabled = (type === 'loading');
+}
+
+function deployToGitHub() {
+  var token = localStorage.getItem('gh_token') || document.getElementById('gh-token').value.trim();
+  if (!token) {
+    setDeployStatus('error', 'Please enter your GitHub Personal Access Token first!');
+    return;
+  }
+  if (!token.startsWith('ghp_') && !token.startsWith('github_pat_')) {
+    setDeployStatus('error', 'Invalid token format. Should start with ghp_ or github_pat_');
+    return;
+  }
+
+  setDeployStatus('loading', 'Getting current file SHA from GitHub...');
+
+  var apiBase = 'https://api.github.com/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/contents/' + GH_FILE_PATH;
+
+  // Step 1: Get current file SHA (required for update)
+  var xhr1 = new XMLHttpRequest();
+  xhr1.open('GET', apiBase + '?ref=' + GH_BRANCH);
+  xhr1.setRequestHeader('Authorization', 'token ' + token);
+  xhr1.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr1.onload = function() {
+    if (xhr1.status === 200) {
+      var fileData = JSON.parse(xhr1.responseText);
+      var sha = fileData.sha;
+      setDeployStatus('loading', 'Encoding and uploading site to GitHub...');
+      uploadToGitHub(token, sha);
+    } else if (xhr1.status === 401) {
+      setDeployStatus('error', 'Token invalid or expired. Please create a new token.');
+    } else if (xhr1.status === 404) {
+      setDeployStatus('error', 'Repository or file not found. Check repo name.');
+    } else {
+      setDeployStatus('error', 'Failed to get file info: ' + xhr1.status);
+    }
+  };
+  xhr1.onerror = function() {
+    setDeployStatus('error', 'Network error. Check internet connection.');
+  };
+  xhr1.send();
+}
+
+function uploadToGitHub(token, sha) {
+  // Get current page HTML
+  var htmlContent = '<!DOCTYPE html>
+' + document.documentElement.outerHTML;
+  
+  // Encode to base64
+  var encoded = '';
+  try {
+    encoded = btoa(unescape(encodeURIComponent(htmlContent)));
+  } catch(e) {
+    setDeployStatus('error', 'Encoding failed: ' + e.message);
+    return;
+  }
+
+  var now = new Date();
+  var commitMsg = 'Auto-deploy from Admin Panel - ' + now.toLocaleString('en-IN');
+
+  var payload = JSON.stringify({
+    message: commitMsg,
+    content: encoded,
+    sha: sha,
+    branch: GH_BRANCH
+  });
+
+  var apiBase = 'https://api.github.com/repos/' + GH_REPO_OWNER + '/' + GH_REPO_NAME + '/contents/' + GH_FILE_PATH;
+
+  var xhr2 = new XMLHttpRequest();
+  xhr2.open('PUT', apiBase);
+  xhr2.setRequestHeader('Authorization', 'token ' + token);
+  xhr2.setRequestHeader('Accept', 'application/vnd.github.v3+json');
+  xhr2.setRequestHeader('Content-Type', 'application/json');
+  xhr2.onload = function() {
+    if (xhr2.status === 200 || xhr2.status === 201) {
+      setDeployStatus('success', 'Deployed successfully! Site will update in 1-2 minutes at 3sureshm.github.io/Ambartery');
+      showToast('Deployed to GitHub!');
+    } else if (xhr2.status === 401) {
+      setDeployStatus('error', 'Token invalid. Create new token with repo scope.');
+    } else if (xhr2.status === 422) {
+      setDeployStatus('error', 'Nothing changed - site is already up to date!');
+    } else {
+      var errMsg = '';
+      try { errMsg = JSON.parse(xhr2.responseText).message; } catch(e) {}
+      setDeployStatus('error', 'Upload failed (' + xhr2.status + '): ' + errMsg);
+    }
+  };
+  xhr2.onerror = function() {
+    setDeployStatus('error', 'Upload failed. Check internet connection.');
+  };
+  xhr2.send(payload);
+}
+
 loadMongoConfig();
+loadSettings();
+loadGHToken();
 renderProds(products);
 seedDemoOrders();
 loadOrdersFromStorage();
