@@ -2801,8 +2801,7 @@ function deployToGitHub() {
 
 function uploadToGitHub(token, sha) {
   // Get current page HTML
-  var htmlContent = '<!DOCTYPE html>
-' + document.documentElement.outerHTML;
+  var htmlContent = document.documentElement.outerHTML;
   
   // Encode to base64
   var encoded = '';
